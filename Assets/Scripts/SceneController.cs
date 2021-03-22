@@ -51,6 +51,7 @@ public class SceneController : MonoBehaviour
             EditorMapModel.Initialize();
             _canvasTitle.Hide();
             _canvasEditor.Show();
+            _mainFieldDrawer.ClearField();
         });
 
         _canvasStageSelect.OnClickReturn.Subscribe(_ =>
