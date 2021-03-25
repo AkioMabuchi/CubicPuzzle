@@ -9,11 +9,8 @@ public static class GameInitializer
     {
         CanvasEditorPresenter canvasEditorPresenter
             = new CanvasEditorPresenter();
-        
-        EditorMapDrawerPresenter editorMapDrawerPresenter
-            = new EditorMapDrawerPresenter();
-        
-        MainFieldDrawerPresenter mainFieldDrawerPresenter
-            = new MainFieldDrawerPresenter();
+
+        GameCameraPresenter gameCameraPresenter
+            = new GameCameraPresenter();
     }
 }

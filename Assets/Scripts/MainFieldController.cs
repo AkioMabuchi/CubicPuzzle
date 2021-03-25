@@ -18,7 +18,9 @@ public interface IMainFieldController
 }
 public class MainFieldController : MonoBehaviour, IMainFieldController
 {
+    private IMainFieldModel _mainFieldModel;
     private IMainFieldInputs _mainFieldInputs;
+    private ISoundPlayer _soundPlayer;
 
     private readonly Subject<Unit> _onStageClear = new Subject<Unit>();
     private readonly Subject<Unit> _onVerified = new Subject<Unit>();
@@ -29,7 +31,9 @@ public class MainFieldController : MonoBehaviour, IMainFieldController
     private MainMode _mainMode = MainMode.Idle;
     private void OnEnable()
     {
+        _mainFieldModel = GameObject.Find("MainFieldModel").GetComponent<IMainFieldModel>();
         _mainFieldInputs = GameObject.Find("MainFieldInputs").GetComponent<IMainFieldInputs>();
+        _soundPlayer = GameObject.Find("SoundPlayer").GetComponent<ISoundPlayer>();
     }
 
     private void Start()
@@ -47,16 +51,50 @@ public class MainFieldController : MonoBehaviour, IMainFieldController
 
     IEnumerator CoroutineMoving(MoveDirection direction)
     {
-        if (MainFieldModel.MoveObjects(direction))
+        if (_mainFieldModel.MoveObjects(direction))
         {
             _mainFieldInputs.SetActive(false);
-            yield return new WaitForSeconds(0.3f);
             
-            MainFieldModel.FallObjects();
-
-            if (MainFieldModel.IsClear() && (_mainMode == MainMode.Main || _mainMode == MainMode.Verifying))
+            if (_mainFieldModel.UpdateFlags())
             {
-                MainFieldModel.ElevateObjects();
+                if (_mainFieldModel.IsClear() && (_mainMode == MainMode.Main || _mainMode == MainMode.Verifying))
+                {
+                    _soundPlayer.PlaySound(1);
+                }
+                else
+                {
+                    _soundPlayer.PlaySound(0);
+                }
+            }
+            yield return new WaitForSeconds(0.3f);
+            if (_mainFieldModel.UpdateFloors())
+            {
+                _soundPlayer.PlaySound(2);
+            }
+            
+            if (_mainFieldModel.FallObjects())
+            {
+                if (_mainFieldModel.UpdateFlags())
+                {
+                    if (_mainFieldModel.IsClear() && (_mainMode == MainMode.Main || _mainMode == MainMode.Verifying))
+                    {
+                        _soundPlayer.PlaySound(1);
+                    }
+                    else
+                    {
+                        _soundPlayer.PlaySound(0);
+                    }
+                }
+                yield return new WaitForSeconds(0.2f);
+                if (_mainFieldModel.UpdateFloors())
+                {
+                    _soundPlayer.PlaySound(2);
+                }
+            }
+
+            if (_mainFieldModel.IsClear() && (_mainMode == MainMode.Main || _mainMode == MainMode.Verifying))
+            {
+                _mainFieldModel.ElevateObjects();
                 switch (_mainMode)
                 {
                     case MainMode.Main:
@@ -69,7 +107,7 @@ public class MainFieldController : MonoBehaviour, IMainFieldController
             }
             else
             {
-                if (MainFieldModel.ElevateObjects())
+                if (_mainFieldModel.ElevateObjects())
                 {
                     yield return new WaitForSeconds(0.5f);
                 }

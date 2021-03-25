@@ -14,73 +14,94 @@ public enum PuzzleFloorMode
 
 public interface IPuzzleFloor
 {
-    public void SetModel(PuzzleFloorMode mode);
-    public void SetPosition(int index);
-    public void SetLevel(int level);
-    public void Elevate(int level);
+    public void Initialize(MainFieldFloor floor, int s);
+    public void Elevate(int s);
+    public void Draw(MainFieldFloor floor);
     public void Diminish();
+    public void ChangeFloorHeight(int s);
 }
 
-public abstract class PuzzleFloor : MonoBehaviour, IPuzzleFloor
+public class PuzzleFloor : PuzzleObject, IPuzzleFloor
 {
-    [SerializeField] private GameObject gameObjectNormal;
-    [SerializeField] private GameObject gameObjectYellowUp;
-    [SerializeField] private GameObject gameObjectYellowDown;
-    [SerializeField] private GameObject gameObjectBlueUp;
-    [SerializeField] private GameObject gameObjectBlueDown;
+    [SerializeField] private GameObject[] gameObjectsNormal = new GameObject[3];
+    [SerializeField] private GameObject[] gameObjectsYellowUp = new GameObject[3];
+    [SerializeField] private GameObject[] gameObjectsYellowDown = new GameObject[3];
+    [SerializeField] private GameObject[] gameObjectsBlueUp = new GameObject[3];
+    [SerializeField] private GameObject[] gameObjectsBlueDown = new GameObject[3];
 
-    public void SetModel(PuzzleFloorMode mode)
+    public void Initialize(MainFieldFloor floor, int s)
     {
-        gameObjectNormal.SetActive(false);
-        gameObjectYellowUp.SetActive(false);
-        gameObjectYellowDown.SetActive(false);
-        gameObjectBlueUp.SetActive(false);
-        gameObjectBlueDown.SetActive(false);
-        
-        switch (mode)
+        floorHeight = s;
+        level = floor.level;
+
+        float positionX = floor.position % 13 - 6;
+        float positionY = floor.level * levelHeight[s];
+        float positionZ = floor.position / 13 - 6;
+
+        transform.localPosition = new Vector3(positionX, positionY, positionZ);
+
+        int objectIndex = 0;
+        switch (floor.floorColor)
         {
-            case PuzzleFloorMode.Normal:
-                gameObjectNormal.SetActive(true);
+            case FloorColor.Yellow:
+                objectIndex = 1;
                 break;
-            case PuzzleFloorMode.YellowUp:
-                gameObjectYellowUp.SetActive(true);
+            case FloorColor.Blue:
+                objectIndex = 2;
                 break;
-            case PuzzleFloorMode.YellowDown:
-                gameObjectYellowDown.SetActive(true);
+        }
+
+        switch (floor.switchPanel)
+        {
+            case SwitchPanel.None:
+                gameObjectsNormal[objectIndex].SetActive(true);
                 break;
-            case PuzzleFloorMode.BlueUp:
-                gameObjectBlueUp.SetActive(true);
+            case SwitchPanel.YellowUp:
+                gameObjectsYellowUp[objectIndex].SetActive(true);
                 break;
-            case PuzzleFloorMode.BlueDown:
-                gameObjectBlueDown.SetActive(true);
+            case SwitchPanel.YellowDown:
+                gameObjectsYellowDown[objectIndex].SetActive(true);
+                break;
+            case SwitchPanel.BlueUp:
+                gameObjectsBlueUp[objectIndex].SetActive(true);
+                break;
+            case SwitchPanel.BlueDown:
+                gameObjectsBlueDown[objectIndex].SetActive(true);
                 break;
         }
     }
 
-    public void SetPosition(int index)
+    public void Draw(MainFieldFloor floor)
     {
-        float positionX = index % 13 - 6;
-        float positionZ = index / 13 - 6;
-        Vector3 position = transform.position;
-        position.x = positionX;
-        position.z = positionZ;
-        transform.position = position;
-    }
-    public void SetLevel(int level)
-    {
-        Vector3 position = transform.position;
-        position.y = level;
-        transform.position = position;
-    }
+        int objectIndex = 0;
+        switch (floor.floorColor)
+        {
+            case FloorColor.Yellow:
+                objectIndex = 1;
+                break;
+            case FloorColor.Blue:
+                objectIndex = 2;
+                break;
+        }
 
-    public void Elevate(int level)
-    {
-        float positionY = level;
-        transform.DOLocalMoveY(positionY, 0.5f);
-    }
-    
-    public void Diminish()
-    {
-        Destroy(gameObject);
+        switch (floor.switchPanel)
+        {
+            case SwitchPanel.YellowUp:
+                gameObjectsYellowUp[objectIndex].SetActive(true);
+                gameObjectsYellowDown[objectIndex].SetActive(false);
+                break;
+            case SwitchPanel.YellowDown:
+                gameObjectsYellowDown[objectIndex].SetActive(true);
+                gameObjectsYellowUp[objectIndex].SetActive(false);
+                break;
+            case SwitchPanel.BlueUp:
+                gameObjectsBlueUp[objectIndex].SetActive(true);
+                gameObjectsBlueDown[objectIndex].SetActive(false);
+                break;
+            case SwitchPanel.BlueDown:
+                gameObjectsBlueDown[objectIndex].SetActive(true);
+                gameObjectsBlueUp[objectIndex].SetActive(false);
+                break;
+        }
     }
 }

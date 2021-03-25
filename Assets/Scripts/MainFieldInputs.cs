@@ -32,7 +32,7 @@ public class MainFieldInputs : MonoBehaviour, IMainFieldInputs
     {
         this.UpdateAsObservable()
             .Where(_ => _isActive)
-            .Where(_ => Input.GetKeyDown(KeyCode.W))
+            .Where(_ => Input.GetKeyDown(KeyCode.UpArrow))
             .Subscribe(_ =>
             {
                 _moveCommand.OnNext(MoveDirection.Up);
@@ -40,7 +40,7 @@ public class MainFieldInputs : MonoBehaviour, IMainFieldInputs
         
         this.UpdateAsObservable()
             .Where(_ => _isActive)
-            .Where(_ => Input.GetKeyDown(KeyCode.A))
+            .Where(_ => Input.GetKeyDown(KeyCode.LeftArrow))
             .Subscribe(_ =>
             {
                 _moveCommand.OnNext(MoveDirection.Left);
@@ -48,7 +48,7 @@ public class MainFieldInputs : MonoBehaviour, IMainFieldInputs
         
         this.UpdateAsObservable()
             .Where(_ => _isActive)
-            .Where(_ => Input.GetKeyDown(KeyCode.S))
+            .Where(_ => Input.GetKeyDown(KeyCode.DownArrow))
             .Subscribe(_ =>
             {
                 _moveCommand.OnNext(MoveDirection.Down);
@@ -56,7 +56,7 @@ public class MainFieldInputs : MonoBehaviour, IMainFieldInputs
         
         this.UpdateAsObservable()
             .Where(_ => _isActive)
-            .Where(_ => Input.GetKeyDown(KeyCode.D))
+            .Where(_ => Input.GetKeyDown(KeyCode.RightArrow))
             .Subscribe(_ =>
             {
                 _moveCommand.OnNext(MoveDirection.Right);

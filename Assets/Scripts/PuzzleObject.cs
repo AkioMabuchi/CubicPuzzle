@@ -3,48 +3,42 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 
-public interface IPuzzleObject
+public abstract class PuzzleObject : MonoBehaviour
 {
-    public void SetPosition(int index);
-    public void MovePosition(int index);
-    public void SetLevel(int level);
-    public void Elevate(int level);
-    public void Diminish();
-}
-public abstract class PuzzleObject : MonoBehaviour, IPuzzleObject
-{
-    public void SetPosition(int index)
+    protected readonly float[] levelHeight = {0.4f, 0.7f, 1.0f};
+    protected int floorHeight;
+    protected int level;
+    public void Move(int s)
     {
-        float positionX = index % 13 - 6;
-        float positionZ = index / 13 - 6;
-        Vector3 position = transform.position;
-        position.x = positionX;
-        position.z = positionZ;
-        transform.position = position;
+        float positionX = s % 13 - 6;
+        float positionY = level * levelHeight[floorHeight];
+        float positionZ = s / 13 - 6;
+        transform.DOLocalMove(new Vector3(positionX, positionY, positionZ), 0.3f).SetEase(Ease.Linear);
     }
 
-    public void MovePosition(int index)
+    public void Fall(int s)
     {
-        float positionX = index % 13 - 6;
-        float positionY = transform.position.y;
-        float positionZ = index / 13 - 6;
-        transform.DOLocalMove(new Vector3(positionX, positionY, positionZ), 0.3f);
-    }
-    public void SetLevel(int level)
-    {
-        Vector3 position = transform.position;
-        position.y = level + 0.2f;
-        transform.position = position;
+        level = s;
+        float positionY = s * levelHeight[floorHeight];
+        transform.DOLocalMoveY(positionY, 0.2f).SetEase(Ease.InQuad);
     }
 
-    public void Elevate(int level)
+    public void Elevate(int s)
     {
-        float positionY = level + 0.2f;
-        transform.DOLocalMoveY(positionY, 0.5f);
+        level = s;
+        float positionY = s * levelHeight[floorHeight];
+        transform.DOLocalMoveY(positionY, 0.5f).SetEase(Ease.InOutSine);
     }
 
     public void Diminish()
     {
         Destroy(gameObject);
+    }
+
+    public virtual void ChangeFloorHeight(int s)
+    {
+        floorHeight = s;
+        float positionY = level * levelHeight[floorHeight];
+        transform.DOLocalMoveY(positionY, 0.0f);
     }
 }

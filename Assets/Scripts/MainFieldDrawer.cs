@@ -5,371 +5,338 @@ using UniRx;
 using UnityEditor;
 using UnityEngine;
 
-public class MainFieldDrawerPresenter
-{
-    public MainFieldDrawerPresenter()
-    {
-        IMainFieldDrawer mainFieldDrawer = GameObject.Find("MainFieldDrawer").GetComponent<IMainFieldDrawer>();
-
-        MainFieldModel.InitializeFloors.Subscribe(map =>
-        {
-            mainFieldDrawer.InitializeFloors(map);
-        });
-        
-        MainFieldModel.InitializePlayers.Subscribe(players =>
-        {
-            mainFieldDrawer.InitializePlayers(players);
-        });
-        
-        MainFieldModel.InitializeFlags.Subscribe(flagLevels =>
-        {
-            mainFieldDrawer.InitializeFlags(flagLevels);
-        });
-
-        MainFieldModel.InitializeBoxes.Subscribe(boxData =>
-        {
-            mainFieldDrawer.InitializeBoxes(boxData);
-        });
-        
-        MainFieldModel.DrawSwitches.Subscribe(switches =>
-        {
-            mainFieldDrawer.DrawSwitches(switches);
-        });
-        
-        MainFieldModel.PositioningPlayers.Subscribe(playerLevels =>
-        {
-            mainFieldDrawer.PositioningPlayers(playerLevels);
-        });
-
-        MainFieldModel.MovingPlayers.Subscribe(players =>
-        {
-            mainFieldDrawer.MovingPlayers(players);
-        });
-
-        MainFieldModel.MovingBoxes.Subscribe(boxData =>
-        {
-            mainFieldDrawer.MovingBoxes(boxData);
-        });
-        MainFieldModel.FallingBoxes.Subscribe(boxData =>
-        {
-            mainFieldDrawer.FallingBoxes(boxData);
-        });
-
-        MainFieldModel.ElevateFloors.Subscribe(floorLevels =>
-        {
-            mainFieldDrawer.ElevateFloors(floorLevels);
-        });
-
-        MainFieldModel.ElevatePlayers.Subscribe(playerLevels =>
-        {
-            mainFieldDrawer.ElevatePlayers(playerLevels);
-        });
-
-        MainFieldModel.ElevateFlags.Subscribe(flagLevels =>
-        {
-            mainFieldDrawer.ElevateFlags(flagLevels);
-        });
-        
-        MainFieldModel.ElevateBoxes.Subscribe(boxData =>
-        {
-            mainFieldDrawer.ElevateBoxes(boxData);
-        });
-        
-        MainFieldModel.GetFlag.Subscribe(index =>
-        {
-            mainFieldDrawer.GetFlag(index);
-        });
-    }
-}
-
 public interface IMainFieldDrawer
 {
-    public void InitializeFloors(EditorMap map);
-    public void InitializePlayers(int[] players);
-    public void InitializeFlags(int[] flagLevels);
-    public void InitializeBoxes(BoxData boxData);
-    public void DrawSwitches(char[] switches);
-    public void PositioningPlayers(int[] playersLevel);
-    public void MovingPlayers(int[] players);
-    public void MovingBoxes(PushedBoxData boxData);
-    public void FallingBoxes(FallBoxData boxData);
-    public void ElevateFloors(int[] floorLevels);
-    public void ElevatePlayers(int[] playerLevels);
-    public void ElevateFlags(int[] flagLevels);
-    public void ElevateBoxes(ElevateBoxData boxData);
-    public void GetFlag(int index);
+    public void InitializeFloors(List<MainFieldFloor> floors);
+    public void InitializePlayers(List<MainFieldPlayer> players);
+    public void InitializeFlags(List<MainFieldFlag> flags);
+    public void InitializeBoxes(List<MainFieldBox> boxes);
+    public void MovePlayers(List<MainFieldPlayer> players);
+    public void MoveBoxes(List<MainFieldBox> boxes);
+    public void FallPlayers(List<MainFieldPlayer> players);
+    public void FallBoxes(List<MainFieldBox> boxes);
+    public void ElevateFloors(List<MainFieldFloor> floors);
+    public void ElevatePlayers(List<MainFieldPlayer> players);
+    public void ElevateFlags(List<MainFieldFlag> flags);
+    public void ElevateBoxes(List<MainFieldBox> boxes);
+    public void UpdateFloors(List<MainFieldFloor> floors);
+    public void UpdateFlags(List<MainFieldFlag> flags);
     public void ClearField();
+    public void DrawMap(EditorMap editorMap);
+    public void ChangeFloorHeight(int floorHeight);
 }
 public class MainFieldDrawer : MonoBehaviour, IMainFieldDrawer
 {
-    [SerializeField] private GameObject prefabFloorWhite;
-    [SerializeField] private GameObject prefabFloorYellow;
-    [SerializeField] private GameObject prefabFloorBlue;
+    [SerializeField] private GameObject prefabFloor;
     [SerializeField] private GameObject prefabPlayer;
     [SerializeField] private GameObject prefabFlag;
-    [SerializeField] private GameObject prefabBox1;
-    [SerializeField] private GameObject prefabBox2;
-    [SerializeField] private GameObject prefabBox3;
+    [SerializeField] private GameObject prefabBox;
 
-    private readonly IPuzzleFloor[] _puzzleFloors = new IPuzzleFloor[169];
-    private readonly IPuzzleObject[] _playerObjects = new IPuzzleObject[169];
-    private readonly IPuzzleObject[] _flagObjects = new IPuzzleObject[169];
-    private readonly IPuzzleObject[] _boxObjects = new IPuzzleObject[169];
+    private readonly List<IPuzzleFloor> _floors = new List<IPuzzleFloor>();
+    private readonly List<IPuzzlePlayer> _players = new List<IPuzzlePlayer>();
+    private readonly List<IPuzzleFlag> _flags = new List<IPuzzleFlag>();
+    private readonly List<IPuzzleBox> _boxes = new List<IPuzzleBox>();
 
-    public void InitializeFloors(EditorMap map)
+    private int _floorHeight;
+    
+    public void InitializeFloors(List<MainFieldFloor> floors)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < _floors.Count; i++)
         {
-            _puzzleFloors[i]?.Diminish();
-            _puzzleFloors[i] = null;
+            _floors[i].Diminish();
+        }
+        _floors.Clear();
 
-            IPuzzleFloor puzzleFloor = null;
-            
-            switch (map.floors[i])
-            {
-                case 'W':
-                    puzzleFloor = Instantiate(prefabFloorWhite).GetComponent<IPuzzleFloor>();
-                    break;
-                case 'Y':
-                    puzzleFloor = Instantiate(prefabFloorYellow).GetComponent<IPuzzleFloor>();
-                    break;
-                case 'B':
-                    puzzleFloor = Instantiate(prefabFloorBlue).GetComponent<IPuzzleFloor>();
-                    break;
-            }
-            
-            puzzleFloor?.SetPosition(i);
-
-            switch (map.levels[i])
-            {
-                case '0':
-                    puzzleFloor?.SetLevel(0);
-                    break;
-                case '1':
-                    puzzleFloor?.SetLevel(1);
-                    break;
-                case '2':
-                    puzzleFloor?.SetLevel(2);
-                    break;
-                case '3':
-                    puzzleFloor?.SetLevel(3);
-                    break;
-            }
-
-            switch (map.objects[i])
-            {
-                case 'Y':
-                    puzzleFloor?.SetModel(PuzzleFloorMode.YellowUp);
-                    break;
-                case 'y':
-                    puzzleFloor?.SetModel(PuzzleFloorMode.YellowDown);
-                    break;
-                case 'B':
-                    puzzleFloor?.SetModel(PuzzleFloorMode.BlueUp);
-                    break;
-                case 'b':
-                    puzzleFloor?.SetModel(PuzzleFloorMode.BlueDown);
-                    break;
-                default:
-                    puzzleFloor?.SetModel(PuzzleFloorMode.Normal);
-                    break;
-            }
-            
-            _puzzleFloors[i] = puzzleFloor;
+        for (int i = 0; i < floors.Count; i++)
+        {
+            IPuzzleFloor floor = Instantiate(prefabFloor).GetComponent<IPuzzleFloor>();
+            floor.Initialize(floors[i], _floorHeight);
+            _floors.Add(floor);
         }
     }
 
-    public void InitializePlayers(int[] players)
+    public void InitializePlayers(List<MainFieldPlayer> players)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < _players.Count; i++)
         {
-            _playerObjects[i]?.Diminish();
-            _playerObjects[i] = null;
+            _players[i].Diminish();
         }
+        _players.Clear();
 
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < players.Count; i++)
         {
-            if (players[i] >= 0)
-            {
-                _playerObjects[players[i]] = Instantiate(prefabPlayer).GetComponent<IPuzzleObject>();
-                _playerObjects[players[i]].SetPosition(i);
-            }
+            IPuzzlePlayer player = Instantiate(prefabPlayer).GetComponent<IPuzzlePlayer>();
+            player.Initialize(players[i], _floorHeight);
+            _players.Add(player);
         }
     }
 
-    public void InitializeFlags(int[] flagLevels)
+    public void InitializeFlags(List<MainFieldFlag> flags)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < _flags.Count; i++)
         {
-            _flagObjects[i]?.Diminish();
-            _flagObjects[i] = null;
+            _flags[i].Diminish();
         }
+        _flags.Clear();
 
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < flags.Count; i++)
         {
-            if (flagLevels[i] >= 0)
-            {
-                _flagObjects[i] = Instantiate(prefabFlag).GetComponent<IPuzzleObject>();
-                _flagObjects[i].SetPosition(i);
-                _flagObjects[i].SetLevel(flagLevels[i]);
-            }
+            IPuzzleFlag flag = Instantiate(prefabFlag).GetComponent<IPuzzleFlag>();
+            flag.Initialize(flags[i], _floorHeight);
+            _flags.Add(flag);
         }
     }
 
-    public void InitializeBoxes(BoxData boxData)
+    public void InitializeBoxes(List<MainFieldBox> boxes)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < _boxes.Count; i++)
         {
-            _boxObjects[i]?.Diminish();
-            _boxObjects[i] = null;
+            _boxes[i].Diminish();
         }
+        _boxes.Clear();
 
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < boxes.Count; i++)
         {
-            if (boxData.objects[i] >= 0)
-            {
-                switch (boxData.sizes[boxData.objects[i]])
-                {
-                    case 1:
-                        _boxObjects[boxData.objects[i]] = Instantiate(prefabBox1).GetComponent<IPuzzleObject>();
-                        break;
-                    case 2:
-                        _boxObjects[boxData.objects[i]] = Instantiate(prefabBox2).GetComponent<IPuzzleObject>();
-                        break;
-                    case 3:
-                        _boxObjects[boxData.objects[i]] = Instantiate(prefabBox3).GetComponent<IPuzzleObject>();
-                        break;
-                }
-
-                _boxObjects[boxData.objects[i]]?.SetPosition(boxData.positions[boxData.objects[i]]);
-                _boxObjects[boxData.objects[i]]?.SetLevel(boxData.levels[boxData.objects[i]]);
-            }
+            IPuzzleBox box = Instantiate(prefabBox).GetComponent<IPuzzleBox>();
+            box.Initialize(boxes[i], _floorHeight);
+            _boxes.Add(box);
         }
     }
 
-    public void DrawSwitches(char[] switches)
+    public void MovePlayers(List<MainFieldPlayer> players)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < players.Count; i++)
         {
-            switch (switches[i])
-            {
-                case 'Y':
-                    _puzzleFloors[i]?.SetModel(PuzzleFloorMode.YellowUp);
-                    break;
-                case 'y':
-                    _puzzleFloors[i]?.SetModel(PuzzleFloorMode.YellowDown);
-                    break;
-                case 'B':
-                    _puzzleFloors[i]?.SetModel(PuzzleFloorMode.BlueUp);
-                    break;
-                case 'b':
-                    _puzzleFloors[i]?.SetModel(PuzzleFloorMode.BlueDown);
-                    break;
-                default:
-                    _puzzleFloors[i]?.SetModel(PuzzleFloorMode.Normal);
-                    break;
-            }
+            _players[i].Move(players[i].position);
         }
     }
 
-    public void PositioningPlayers(int[] playersLevel)
+    public void MoveBoxes(List<MainFieldBox> boxes)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < boxes.Count; i++)
         {
-            _playerObjects[i]?.SetLevel(playersLevel[i]);
+            _boxes[i].Move(boxes[i].position);
         }
     }
 
-    public void MovingPlayers(int[] players)
+    public void FallPlayers(List<MainFieldPlayer> players)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < players.Count; i++)
         {
-            if (players[i] >= 0)
-            {
-                _playerObjects[players[i]]?.MovePosition(i);
-            }
+            _players[i].Fall(players[i].level);
         }
     }
 
-    public void MovingBoxes(PushedBoxData boxData)
+    public void FallBoxes(List<MainFieldBox> boxes)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < boxes.Count; i++)
         {
-            if (boxData.indexes[i] >= 0)
-            {
-                _boxObjects[boxData.indexes[i]]?.MovePosition(boxData.positions[boxData.indexes[i]]);
-            }
+            _boxes[i].Fall(boxes[i].level);
         }
     }
 
-    public void FallingBoxes(FallBoxData boxData)
+    public void ElevateFloors(List<MainFieldFloor> floors)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < floors.Count; i++)
         {
-            if (boxData.indexes[i] >= 0)
-            {
-                _boxObjects[boxData.indexes[i]]?.SetLevel(boxData.levels[boxData.indexes[i]]);
-            }
+            _floors[i].Elevate(floors[i].level);
         }
     }
 
-    public void ElevateFloors(int[] floorLevels)
+    public void ElevatePlayers(List<MainFieldPlayer> players)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < players.Count; i++)
         {
-            _puzzleFloors[i]?.Elevate(floorLevels[i]);
+            _players[i].Elevate(players[i].level);
         }
     }
 
-    public void ElevatePlayers(int[] playerLevels)
+    public void ElevateFlags(List<MainFieldFlag> flags)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < flags.Count; i++)
         {
-            _playerObjects[i]?.Elevate(playerLevels[i]);
+            _flags[i].Elevate(flags[i].level);
         }
     }
 
-    public void ElevateFlags(int[] flagLevels)
+    public void ElevateBoxes(List<MainFieldBox> boxes)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < boxes.Count; i++)
         {
-            if (flagLevels[i] >= 0)
-            {
-                _flagObjects[i]?.Elevate(flagLevels[i]);
-            }
+            _boxes[i].Elevate(boxes[i].level);
         }
     }
 
-    public void ElevateBoxes(ElevateBoxData boxData)
+    public void UpdateFloors(List<MainFieldFloor> floors)
     {
-        for (int i = 0; i < 169; i++)
+        for (int i = 0; i < floors.Count; i++)
         {
-            if (boxData.indexes[i] >= 0)
-            {
-                _boxObjects[boxData.indexes[i]]?.Elevate(boxData.levels[boxData.indexes[i]]);
-            }
+            _floors[i].Draw(floors[i]);
         }
     }
 
-    public void GetFlag(int index)
+    public void UpdateFlags(List<MainFieldFlag> flags)
     {
-        _flagObjects[index]?.Diminish();
-        _flagObjects[index] = null;
+        for (int i = 0; i < flags.Count; i++)
+        {
+            _flags[i].Draw(flags[i].doesExist);
+        }
     }
 
     public void ClearField()
     {
+        for (int i = 0; i < _floors.Count; i++)
+        {
+            _floors[i].Diminish();
+        }
+        
+        for (int i = 0; i < _players.Count; i++)
+        {
+            _players[i].Diminish();
+        }
+        
+        for (int i = 0; i < _flags.Count; i++)
+        {
+            _flags[i].Diminish();
+        }
+        
+        for (int i = 0; i < _boxes.Count; i++)
+        {
+            _boxes[i].Diminish();
+        }
+        
+        _floors.Clear();
+        _players.Clear();
+        _flags.Clear();
+        _boxes.Clear();
+    }
+
+    public void DrawMap(EditorMap editorMap)
+    {
+        List<MainFieldFloor> floors = new List<MainFieldFloor>();
+        List<MainFieldPlayer> players = new List<MainFieldPlayer>();
+        List<MainFieldFlag> flags = new List<MainFieldFlag>();
+        List<MainFieldBox> boxes = new List<MainFieldBox>();
+        
         for (int i = 0; i < 169; i++)
         {
-            _puzzleFloors[i]?.Diminish();
-            _playerObjects[i]?.Diminish();
-            _flagObjects[i]?.Diminish();
-            _boxObjects[i]?.Diminish();
+            int level = 0;
+            switch (editorMap.levels[i])
+            {
+                case '1':
+                    level = 1;
+                    break;
+                case '2':
+                    level = 2;
+                    break;
+                case '3':
+                    level = 3;
+                    break;
+            }
+            
+            MainFieldFloor floor = new MainFieldFloor
+            {
+                position = i,
+                level = level,
+                switchPanel = SwitchPanel.None
+            };
 
-            _puzzleFloors[i] = null;
-            _playerObjects[i] = null;
-            _flagObjects[i] = null;
-            _boxObjects[i] = null;
+            MainFieldPlayer player = new MainFieldPlayer
+            {
+                position = i,
+                level = level
+            };
+
+            MainFieldFlag flag = new MainFieldFlag
+            {
+                position = i,
+                level = level,
+                doesExist = true
+            };
+
+            MainFieldBox box = new MainFieldBox
+            {
+                position = i,
+                level = level,
+            };
+            
+            switch (editorMap.objects[i])
+            {
+                case 'Y':
+                    floor.switchPanel = SwitchPanel.YellowUp;
+                    break;
+                case 'y':
+                    floor.switchPanel = SwitchPanel.YellowDown;
+                    break;
+                case 'B':
+                    floor.switchPanel = SwitchPanel.BlueUp;
+                    break;
+                case 'b':
+                    floor.switchPanel = SwitchPanel.BlueDown;
+                    break;
+                case 'P':
+                    players.Add(player);
+                    break;
+                case 'F':
+                    flags.Add(flag);
+                    break;
+                case '1':
+                    box.size = 1;
+                    boxes.Add(box);
+                    break;
+                case '2':
+                    box.size = 2;
+                    boxes.Add(box);
+                    break;
+                case '3':
+                    box.size = 3;
+                    boxes.Add(box);
+                    break;
+            }
+
+            switch (editorMap.floors[i])
+            {
+                case 'W':
+                    floor.floorColor = FloorColor.White;
+                    floors.Add(floor);
+                    break;
+                case 'Y':
+                    floor.floorColor = FloorColor.Yellow;
+                    floors.Add(floor);
+                    break;
+                case 'B':
+                    floor.floorColor = FloorColor.Blue;
+                    floors.Add(floor);
+                    break;
+            }
+        }
+        InitializeFloors(floors);
+        InitializePlayers(players);
+        InitializeFlags(flags);
+        InitializeBoxes(boxes);
+    }
+    public void ChangeFloorHeight(int floorHeight)
+    {
+        _floorHeight = floorHeight;
+        
+        for (int i = 0; i < _floors.Count; i++)
+        {
+            _floors[i].ChangeFloorHeight(floorHeight);
+        }
+        
+        for (int i = 0; i < _players.Count; i++)
+        {
+            _players[i].ChangeFloorHeight(floorHeight);
+        }
+        
+        for (int i = 0; i < _flags.Count; i++)
+        {
+            _flags[i].ChangeFloorHeight(floorHeight);
+        }
+        
+        for (int i = 0; i < _boxes.Count; i++)
+        {
+            _boxes[i].ChangeFloorHeight(floorHeight);
         }
     }
 }

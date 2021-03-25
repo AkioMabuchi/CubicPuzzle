@@ -14,11 +14,12 @@ public class SceneController : MonoBehaviour
     private ICanvasEditor _canvasEditor;
     private ICanvasRunning _canvasRunning;
     private ICanvasVerified _canvasVerified;
+    private ICanvasSettings _canvasSettings;
     
-    private IEditorMapDrawer _editorMapDrawer;
     private IMainFieldDrawer _mainFieldDrawer;
     private IMainFieldInputs _mainFieldInputs;
     private IMainFieldController _mainFieldController;
+    private IMainFieldModel _mainFieldModel;
     
     private EditorMap _editorMap;
     private EditorMap _mainMap;
@@ -31,11 +32,12 @@ public class SceneController : MonoBehaviour
         _canvasEditor = GameObject.Find("CanvasEditor").GetComponent<ICanvasEditor>();
         _canvasRunning = GameObject.Find("CanvasRunning").GetComponent<ICanvasRunning>();
         _canvasVerified = GameObject.Find("CanvasVerified").GetComponent<ICanvasVerified>();
+        _canvasSettings = GameObject.Find("CanvasSettings").GetComponent<ICanvasSettings>();
         
-        _editorMapDrawer = GameObject.Find("EditorMapDrawer").GetComponent<IEditorMapDrawer>();
         _mainFieldDrawer = GameObject.Find("MainFieldDrawer").GetComponent<IMainFieldDrawer>();
         _mainFieldInputs = GameObject.Find("MainFieldInputs").GetComponent<IMainFieldInputs>();
         _mainFieldController = GameObject.Find("MainFieldController").GetComponent<IMainFieldController>();
+        _mainFieldModel = GameObject.Find("MainFieldModel").GetComponent<IMainFieldModel>();
     }
 
     private void Start()
@@ -54,6 +56,11 @@ public class SceneController : MonoBehaviour
             _mainFieldDrawer.ClearField();
         });
 
+        _canvasTitle.OnClickSettings.Subscribe(_ =>
+        {
+            _canvasSettings.FadeIn();
+        });
+        
         _canvasStageSelect.OnClickReturn.Subscribe(_ =>
         {
             _canvasStageSelect.Hide();
@@ -69,9 +76,8 @@ public class SceneController : MonoBehaviour
             _canvasStageSelect.Hide();
             _canvasMain.Show();
             
-            _editorMapDrawer.ClearMap();
             _mainFieldInputs.SetActive(true);
-            MainFieldModel.InitializeMap(_mainMap);
+            _mainFieldModel.InitializeMap(_mainMap);
             MainModeModel.SetMode(MainMode.Main);
         });
 
@@ -85,7 +91,7 @@ public class SceneController : MonoBehaviour
 
         _canvasMain.OnClickReset.Subscribe(_ =>
         {
-            MainFieldModel.InitializeMap(_mainMap);
+            _mainFieldModel.InitializeMap(_mainMap);
         });
 
         _canvasStageClear.OnClickStageSelect.Subscribe(_ =>
@@ -104,9 +110,8 @@ public class SceneController : MonoBehaviour
         {
             _canvasEditor.Hide();
             _canvasRunning.Show();
-            _editorMapDrawer.ClearMap();
             _mainFieldInputs.SetActive(true);
-            MainFieldModel.InitializeMap(_editorMap);
+            _mainFieldModel.InitializeMap(_editorMap);
             MainModeModel.SetMode(MainMode.Running);
         });
 
@@ -114,9 +119,8 @@ public class SceneController : MonoBehaviour
         {
             _canvasEditor.Hide();
             _canvasRunning.Show();
-            _editorMapDrawer.ClearMap();
             _mainFieldInputs.SetActive(true);
-            MainFieldModel.InitializeMap(_editorMap);
+            _mainFieldModel.InitializeMap(_editorMap);
             MainModeModel.SetMode(MainMode.Verifying);
         });
 
@@ -125,8 +129,7 @@ public class SceneController : MonoBehaviour
             _canvasEditor.Show();
             _canvasRunning.Hide();
             _mainFieldInputs.SetActive(false);
-            _editorMapDrawer.DrawMap(_editorMap);
-            _mainFieldDrawer.ClearField();
+            _mainFieldDrawer.DrawMap(_editorMap);
             MainModeModel.SetMode(MainMode.Idle);
         });
         
@@ -135,8 +138,7 @@ public class SceneController : MonoBehaviour
             _canvasEditor.Show();
             _canvasVerified.Hide();
             _mainFieldInputs.SetActive(false);
-            _editorMapDrawer.DrawMap(_editorMap);
-            _mainFieldDrawer.ClearField();
+            _mainFieldDrawer.DrawMap(_editorMap);
         });
 
         _canvasVerified.OnClickTitle.Subscribe(_ =>
@@ -146,6 +148,10 @@ public class SceneController : MonoBehaviour
             _mainFieldDrawer.ClearField();
         });
 
+        _canvasSettings.OnClickFinish.Subscribe(_ =>
+        {
+            _canvasSettings.FadeOut();
+        });
         _mainFieldController.OnStageClear.Subscribe(_ =>
         {
             _canvasMain.Hide();
@@ -171,7 +177,6 @@ public class SceneController : MonoBehaviour
             _canvasVerified.SetEditorMap(editorMap);
         });
 
-
         _canvasTitle.Show();
         _canvasStageSelect.Hide();
         _canvasMain.Hide();
@@ -179,5 +184,6 @@ public class SceneController : MonoBehaviour
         _canvasEditor.Hide();
         _canvasRunning.Hide();
         _canvasVerified.Hide();
+        _canvasSettings.Hide();
     }
 }

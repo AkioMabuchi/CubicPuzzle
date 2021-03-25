@@ -13,8 +13,7 @@ public class StageLoaderController : MonoBehaviour
     private ICanvasMain _canvasMain;
     private ICanvasStageClear _canvasStageClear;
     private ICanvasVerified _canvasVerified;
-    private IEditorMapDrawer _editorMapDrawer;
-    
+    private IMainFieldDrawer _mainFieldDrawer;
     private void OnEnable()
     {
         _canvasTitle = GameObject.Find("CanvasTitle").GetComponent<ICanvasTitle>();
@@ -22,7 +21,7 @@ public class StageLoaderController : MonoBehaviour
         _canvasMain = GameObject.Find("CanvasMain").GetComponent<ICanvasMain>();
         _canvasStageClear = GameObject.Find("CanvasStageClear").GetComponent<ICanvasStageClear>();
         _canvasVerified = GameObject.Find("CanvasVerified").GetComponent<ICanvasVerified>();
-        _editorMapDrawer = GameObject.Find("EditorMapDrawer").GetComponent<IEditorMapDrawer>();
+        _mainFieldDrawer = GameObject.Find("MainFieldDrawer").GetComponent<IMainFieldDrawer>();
     }
 
     private void Start()
@@ -89,7 +88,7 @@ public class StageLoaderController : MonoBehaviour
                     editorMap.floors = stage.floors.ToCharArray();
                     editorMap.levels = stage.levels.ToCharArray();
                     editorMap.objects = stage.objects.ToCharArray();
-                    _editorMapDrawer.DrawMap(editorMap);
+                    _mainFieldDrawer.DrawMap(editorMap);
                 }
             }
         });
