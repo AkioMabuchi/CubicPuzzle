@@ -20,6 +20,11 @@ public class SceneController : MonoBehaviour
     private IMainFieldInputs _mainFieldInputs;
     private IMainFieldController _mainFieldController;
     private IMainFieldModel _mainFieldModel;
+
+    private IAudioModel _audioModel;
+
+    private IMusicPlayer _musicPlayer;
+    private ISoundPlayer _soundPlayer;
     
     private EditorMap _editorMap;
     private EditorMap _mainMap;
@@ -38,6 +43,11 @@ public class SceneController : MonoBehaviour
         _mainFieldInputs = GameObject.Find("MainFieldInputs").GetComponent<IMainFieldInputs>();
         _mainFieldController = GameObject.Find("MainFieldController").GetComponent<IMainFieldController>();
         _mainFieldModel = GameObject.Find("MainFieldModel").GetComponent<IMainFieldModel>();
+
+        _audioModel = GameObject.Find("AudioModel").GetComponent<IAudioModel>();
+        
+        _musicPlayer = GameObject.Find("MusicPlayer").GetComponent<IMusicPlayer>();
+        _soundPlayer = GameObject.Find("SoundPlayer").GetComponent<ISoundPlayer>();
     }
 
     private void Start()
@@ -45,7 +55,7 @@ public class SceneController : MonoBehaviour
         _canvasTitle.OnClickStart.Subscribe(_ =>
         {
             _canvasTitle.Hide();
-            _canvasStageSelect.Show();
+            _canvasStageSelect.FadeIn();
         });
         
         _canvasTitle.OnClickEdit.Subscribe(_ =>
@@ -99,7 +109,12 @@ public class SceneController : MonoBehaviour
             _canvasStageSelect.Show();
             _canvasStageClear.Hide();
         });
-        
+
+        _canvasStageClear.OnEndStageClear.Subscribe(_ =>
+        {
+            _canvasStageSelect.Appear();
+            _canvasStageClear.Hide();
+        });
         _canvasEditor.OnClickReturn.Subscribe(_ =>
         {
             _canvasEditor.Hide();
@@ -148,6 +163,21 @@ public class SceneController : MonoBehaviour
             _mainFieldDrawer.ClearField();
         });
 
+        _canvasSettings.OnValueChangedMusic.Subscribe(value =>
+        {
+            _audioModel.SetMusicVolume(value);
+        });
+
+        _canvasSettings.OnValueChangedSound.Subscribe(value =>
+        {
+            _audioModel.SetSoundVolume(value);
+        });
+
+        _canvasSettings.OnPointerUpSound.Subscribe(_ =>
+        {
+            _soundPlayer.PlaySound(0);
+        });
+        
         _canvasSettings.OnClickFinish.Subscribe(_ =>
         {
             _canvasSettings.FadeOut();
@@ -156,16 +186,16 @@ public class SceneController : MonoBehaviour
         {
             _canvasMain.Hide();
             MainModeModel.SetMode(MainMode.Idle);
-            Observable.Timer(TimeSpan.FromSeconds(1.0)).Subscribe(_ =>
+            Observable.Timer(TimeSpan.FromSeconds(0.2)).Subscribe(_ =>
             {
-                _canvasStageClear.Show();
+                _canvasStageClear.StageClear();
             });
         });
         _mainFieldController.OnVerified.Subscribe(_ =>
         {
             _canvasRunning.Hide();
             MainModeModel.SetMode(MainMode.Idle);
-            Observable.Timer(TimeSpan.FromSeconds(0.8)).Subscribe(_ =>
+            Observable.Timer(TimeSpan.FromSeconds(0.8)).Subscribe(__ =>
             {
                 _canvasVerified.Show();
             });
@@ -177,6 +207,16 @@ public class SceneController : MonoBehaviour
             _canvasVerified.SetEditorMap(editorMap);
         });
 
+        _audioModel.MusicVolume.Subscribe(value =>
+        {
+            _canvasSettings.SetMusicVolume(value);
+        });
+
+        _audioModel.SoundVolume.Subscribe(value =>
+        {
+            _canvasSettings.SetSoundVolume(value);
+        });
+
         _canvasTitle.Show();
         _canvasStageSelect.Hide();
         _canvasMain.Hide();
@@ -185,5 +225,10 @@ public class SceneController : MonoBehaviour
         _canvasRunning.Hide();
         _canvasVerified.Hide();
         _canvasSettings.Hide();
+
+        Observable.Timer(TimeSpan.FromSeconds(2.0)).Subscribe(_ =>
+        {
+            _musicPlayer.StartMusic();
+        });
     }
 }

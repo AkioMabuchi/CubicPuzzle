@@ -9,12 +9,26 @@ using UnityEngine.UI;
 
 public interface ICanvasSettings
 {
-    IObservable<Unit> OnClickFinish
+    IObservable<float> OnValueChangedMusic
     {
         get;
     }
 
+    IObservable<float> OnValueChangedSound
+    {
+        get;
+    }
+
+    IObservable<Unit> OnPointerUpSound
+    {
+        get;
+    }
     IObservable<int> OnClickFloorHeight
+    {
+        get;
+    }
+
+    IObservable<Unit> OnClickFinish
     {
         get;
     }
@@ -23,6 +37,8 @@ public interface ICanvasSettings
     public void FadeOut();
     public void Hide();
     public void SetFloorHeight(int floorHeight);
+    public void SetMusicVolume(float value);
+    public void SetSoundVolume(float value);
 }
 
 public class CanvasSettings : CanvasMonoBehaviour, ICanvasSettings
@@ -31,18 +47,30 @@ public class CanvasSettings : CanvasMonoBehaviour, ICanvasSettings
     private GameObject _gameObjectImageBackground;
     private GameObject _gameObjectImageForm;
     private GameObject _gameObjectGroupElements;
+    private GameObject _gameObjectSliderMusic;
+    private GameObject _gameObjectSliderSound;
     private readonly GameObject[] _gameObjectsImagesButtonFloorHeight = new GameObject[3];
     private readonly GameObject[] _gameObjectsTextMeshProsButtonFloorHeight = new GameObject[3];
 
     private Image _imageBackground;
     private Image _imageForm;
-    private Image[] _imagesButtonFloorHeight = new Image[3];
-    private TextMeshProUGUI[] _textMeshProsButtonFloorHeight = new TextMeshProUGUI[3];
+    private Slider _sliderMusic;
+    private Slider _sliderSound;
+    private readonly Image[] _imagesButtonFloorHeight = new Image[3];
+    private readonly TextMeshProUGUI[] _textMeshProsButtonFloorHeight = new TextMeshProUGUI[3];
     
-    private readonly Subject<Unit> _onClickFinish = new Subject<Unit>();
+
+    private readonly Subject<float> _onValueChangedMusic = new Subject<float>();
+    private readonly Subject<float> _onValueChangedSound = new Subject<float>();
+    private readonly Subject<Unit> _onPointerUpSound = new Subject<Unit>();
     private readonly Subject<int> _onClickFloorHeight = new Subject<int>();
-    public IObservable<Unit> OnClickFinish => _onClickFinish;
+    private readonly Subject<Unit> _onClickFinish = new Subject<Unit>();
+
+    public IObservable<float> OnValueChangedMusic => _onValueChangedMusic;
+    public IObservable<float> OnValueChangedSound => _onValueChangedSound;
+    public IObservable<Unit> OnPointerUpSound => _onPointerUpSound;
     public IObservable<int> OnClickFloorHeight => _onClickFloorHeight;
+    public IObservable<Unit> OnClickFinish => _onClickFinish;
 
     private int _floorHeight;
     private void OnEnable()
@@ -52,9 +80,15 @@ public class CanvasSettings : CanvasMonoBehaviour, ICanvasSettings
         _gameObjectImageForm = _gameObjectImageBackground.transform.Find("ImageForm").gameObject;
         _gameObjectGroupElements = _gameObjectImageForm.transform.Find("GroupElements").gameObject;
 
+        _gameObjectSliderMusic = _gameObjectGroupElements.transform.Find("SliderMusic").gameObject;
+        _gameObjectSliderSound = _gameObjectGroupElements.transform.Find("SliderSound").gameObject;
+        
         _imageBackground = _gameObjectImageBackground.GetComponent<Image>();
         _imageForm = _gameObjectImageForm.GetComponent<Image>();
 
+        _sliderMusic = _gameObjectSliderMusic.GetComponent<Slider>();
+        _sliderSound = _gameObjectSliderSound.GetComponent<Slider>();
+        
         for (int i = 0; i < 3; i++)
         {
             _gameObjectsImagesButtonFloorHeight[i] =
@@ -131,6 +165,31 @@ public class CanvasSettings : CanvasMonoBehaviour, ICanvasSettings
         _onClickFinish.OnNext(Unit.Default);
     }
 
+    public void SetMusicVolume(float value)
+    {
+        _sliderMusic.value = value;
+    }
+
+    public void SetSoundVolume(float value)
+    {
+        _sliderSound.value = value;
+    }
+
+    public void OnValueChangedSliderMusic()
+    {
+        _onValueChangedMusic.OnNext(_sliderMusic.value);
+    }
+
+    public void OnValueChangedSliderSound()
+    {
+        _onValueChangedSound.OnNext(_sliderSound.value);
+    }
+
+    public void OnPointerUpSliderSound()
+    {
+        _onPointerUpSound.OnNext(Unit.Default);
+    }
+    
     public void OnPointerEnterFloorHeight(int index)
     {
         if (index != _floorHeight)

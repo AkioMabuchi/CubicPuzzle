@@ -30,21 +30,11 @@ public class StageLoaderController : MonoBehaviour
         IStageLoader stageLoaderForUpload = Instantiate(prefabStageLoader).GetComponent<IStageLoader>();
         IStageLoader stageLoaderForTitle = Instantiate(prefabStageLoader).GetComponent<IStageLoader>();
 
-        _canvasTitle.OnClickStart.Subscribe(_ =>
+        _canvasStageSelect.OnFormShown.Subscribe(_ =>
         {
             stageLoaderForStageSelect.ReceiveStages();
         });
 
-        _canvasMain.OnClickPause.Subscribe(_ =>
-        {
-            stageLoaderForStageSelect.ReceiveStages();
-        });
-
-        _canvasStageClear.OnClickStageSelect.Subscribe(_ =>
-        {
-            stageLoaderForStageSelect.ReceiveStages();
-        });
-        
         _canvasVerified.OnClickUpload.Subscribe(stage =>
         {
             stageLoaderForUpload.SendStage(stage);
@@ -54,7 +44,7 @@ public class StageLoaderController : MonoBehaviour
         {
             if (result == null)
             {
-
+                _canvasStageSelect.LoadingError();
             }
             else
             {
